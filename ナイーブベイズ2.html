@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ナイーブベイズ分類器</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; background: #f9f9f9; }
+    h1 { color: #333; }
+    .box { background: #fff; padding: 1em; margin: 1em 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    input, textarea, button { margin-top: .5em; padding: .5em; width: 100%; }
+    button { background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .result { font-weight: bold; color: #006400; }
+  </style>
+</head>
+<body>
+  <h1>ナイーブベイズ文書分類</h1>
+
+  <!-- 学習データ登録 -->
+  <div class="box">
+    <h2>学習データ追加</h2>
+    <label>カテゴリ名:</label>
+    <input id="categoryInput" type="text" placeholder="例: スポーツ, 政治, テック">
+    <label>文章:</label>
+    <textarea id="textInput" rows="3" placeholder="学習させる文章を入力"></textarea>
+    <button onclick="train()">学習する</button>
+  </div>
+
+  <!-- 分類テスト -->
+  <div class="box">
+    <h2>文章を分類</h2>
+    <textarea id="classifyInput" rows="3" placeholder="分類したい文章を入力"></textarea>
+    <button id="classifyBtn">分類する</button>
+    <p class="result" id="result"></p>
+  </div>
+
+  <script>
+    const data = { docs: {}, counts: {}, totalDocs: 0 };
+
+    // --- 学習処理 ---
+    function train() {
+      const category = document.getElementById("categoryInput").value.trim();
+      const text = document.getElementById("textInput").value.trim();
+      if (!category || !text) return alert("カテゴリと文章を入力してください");
+
+      const words = tokenize(text);
+
+      if (!data.docs[category]) {
+        data.docs[category] = {};
+        data.counts[category] = 0;
+      }
+
+      words.forEach(w => {
+        data.docs[category][w] = (data.docs[category][w] || 0) + 1;
+      });
+      data.counts[category]++;
+      data.totalDocs++;
+
+      alert("学習しました！");
+      document.getElementById("categoryInput").value = "";
+      document.getElementById("textInput").value = "";
+    }
+
+    // --- 分類処理 ---
+    function classify() {
+      try {
+        const text = document.getElementById("classifyInput").value.trim();
+        if (!text) {
+          document.getElementById("result").textContent = "";
+          alert("文章を入力してください");
+          return;
+        }
+
+        // 学習データが1つも無ければ明示的に表示して終了
+        if (Object.keys(data.docs).length === 0 || data.totalDocs === 0) {
+          document.getElementById("result").textContent = "学習データがありません。";
+          return;
+        }
+
+        const words = tokenize(text);
+
+        // 全カテゴリ共通語彙を生成
+        const vocab = new Set();
+        for (const cat of Object.keys(data.docs)) {
+          Object.keys(data.docs[cat]).forEach(w => vocab.add(w));
+        }
+        const vocabSize = vocab.size;
+
+        let bestCat = null;
+        let bestScore = -Infinity;
+        let categoryFound = false;
+
+        // カテゴリごとにスコア計算
+        for (const category of Object.keys(data.docs)) {
+          // このカテゴリに学習データが無い場合はスキップ
+          if (data.counts[category] === 0) continue;
+
+          let score = Math.log(data.counts[category] / data.totalDocs);
+          const totalWords = Object.values(data.docs[category]).reduce((a, b) => a + b, 0);
+
+          words.forEach(w => {
+            const wordCount = data.docs[category][w] || 0;
+            score += Math.log((wordCount + 1) / (totalWords + vocabSize));
+          });
+
+          categoryFound = true;
+          if (score > bestScore) {
+            bestScore = score;
+            bestCat = category;
+          }
+        }
+
+        // 結果がundefinedやnullにならないように明示的判定
+        let resultText = "";
+        if (!categoryFound || bestCat === null || bestCat === undefined) {
+          resultText = "学習データが不足しています。";
+        } else {
+          resultText = `分類結果: ${bestCat}`;
+        }
+
+        document.getElementById("result").textContent = resultText;
+
+      } catch (e) {
+        console.error(e);
+        alert("分類中にエラーが発生しました。もう一度試してください。");
+        document.getElementById("result").textContent = "";
+      }
+    }
+
+    // --- トークン化（簡易） ---
+    function tokenize(text) {
+      // 日本語対応：全角句読点やスペースも分割対象に
+      return text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+    }
+
+    // 分類ボタンに何度でもイベントをバインド
+    document.getElementById("classifyBtn").addEventListener("click", classify);
+
+  </script>
+</body>
+</html>

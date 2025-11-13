@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>ReCloset プロトタイプ - 衝動買いスコア & コーデスコア</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card-bg: #ffffff;
+      --accent: #4b7bec;
+      --accent-soft: rgba(75, 123, 236, 0.12);
+      --danger: #ff5252;
+      --success: #2ecc71;
+      --text-main: #222;
+      --text-sub: #666;
+      --border: #e1e4ec;
+      --radius-lg: 16px;
+      --radius-md: 10px;
+      --shadow-soft: 0 10px 25px rgba(15, 35, 95, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #e7efff 0, #f5f7fb 45%, #ffffff 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 1.5rem 1.5rem 0.5rem;
+    }
+
+    .app-title {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 700;
+      font-size: 1.6rem;
+      color: var(--accent);
+    }
+
+    .logo-dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #4b7bec, #a55eea);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 0.9rem;
+      box-shadow: 0 6px 15px rgba(75, 123, 236, 0.45);
+    }
+
+    .subtitle {
+      margin-top: 0.3rem;
+      color: var(--text-sub);
+      font-size: 0.9rem;
+    }
+
+    main {
+      padding: 0.5rem 1.5rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
+      padding: 1.3rem 1.3rem 1.4rem;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.7rem;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .card-pill {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.6rem;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .card-desc {
+      color: var(--text-sub);
+      font-size: 0.82rem;
+      margin-bottom: 0.8rem;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem 1rem;
+      margin-top: 0.3rem;
+      align-items: flex-end;
+    }
+
+    @media (max-width: 720px) {
+      form {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.8rem;
+    }
+
+    label {
+      font-weight: 600;
+      color: #444;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    label span.hint {
+      font-weight: 400;
+      color: var(--text-sub);
+      font-size: 0.75rem;
+    }
+
+    input[type="number"],
+    select {
+      padding: 0.4rem 0.5rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      font-size: 0.84rem;
+      outline: none;
+      background: #fdfdff;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    }
+
+    input[type="number"]:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+      background: #ffffff;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(135deg, #4b7bec, #3867d6);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      box-shadow: 0 8px 18px rgba(75, 123, 236, 0.45);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+      box-shadow: 0 10px 22px rgba(75, 123, 236, 0.55);
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.98);
+      box-shadow: 0 4px 10px rgba(75, 123, 236, 0.35);
+    }
+
+    .btn-secondary {
+      background: #f3f4fb;
+      color: #555;
+      box-shadow: none;
+    }
+
+    .btn-secondary:hover {
+      filter: none;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .result {
+      margin-top: 1rem;
+      border-radius: var(--radius-md);
+      padding: 0.7rem 0.8rem;
+      background: #f7f8ff;
+      border: 1px dashed #d6daf4;
+      display: grid;
+      grid-template-columns: 110px minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    @media (max-width: 600px) {
+      .result {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .score-circle {
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      background: conic-gradient(var(--accent) 0deg, #d4ddff 220deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin: 0 auto;
+    }
+
+    .score-circle-inner {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .score-circle-inner span.value {
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+
+    .score-label {
+      font-size: 0.74rem;
+      color: var(--text-sub);
+    }
+
+    .result-main {
+      font-size: 0.9rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.1rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+
+    .badge-danger {
+      background: rgba(255, 82, 82, 0.06);
+      color: var(--danger);
+      border: 1px solid rgba(255, 82, 82, 0.35);
+    }
+
+    .badge-warn {
+      background: rgba(255, 186, 0, 0.08);
+      color: #d35400;
+      border: 1px solid rgba(255, 186, 0, 0.4);
+    }
+
+    .badge-good {
+      background: rgba(46, 204, 113, 0.08);
+      color: var(--success);
+      border: 1px solid rgba(46, 204, 113, 0.45);
+    }
+
+    .result-text-main {
+      margin-bottom: 0.2rem;
+    }
+
+    .result-text-sub {
+      color: var(--text-sub);
+      font-size: 0.82rem;
+    }
+
+    .mini-section-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-sub);
+      margin-bottom: 0.4rem;
+    }
+
+    .level-card {
+      margin-top: 0.8rem;
+      padding: 0.7rem 0.9rem;
+      border-radius: var(--radius-md);
+      background: #121826;
+      color: #eaefff;
+      font-size: 0.85rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .level-chip {
+      display: inline-flex;
+      padding: 0.1rem 0.6rem;
+      font-size: 0.72rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      margin-right: 0.5rem;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .level-progress {
+      margin-top: 0.35rem;
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .level-progress-inner {
+      height: 100%;
+      background: linear-gradient(90deg, #4b7bec, #45aaf2, #a55eea);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+
+    .level-card::after {
+      content: "";
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      top: -70px;
+      right: -40px;
+      pointer-events: none;
+    }
+
+    .helper-text {
+      margin-top: 0.6rem;
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="app-title">
+      <div class="logo-dot">R</div>
+      ReCloset <span style="font-size:0.9rem; color:#555;">/ 衝動買いを数値でブレーキするクローゼット</span>
+    </div>
+    <p class="subtitle">
+      買う前に「本当に必要？」をスコアで可視化。あなたのクローゼット運用レベルも一緒にアップデート。
+    </p>
+  </header>
+
+  <main>
+    <div class="layout">
+      <!-- 左：衝動買いスコア -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">
+              衝動買いスコア診断
+              <span class="card-pill">買う前チェック</span>
+            </div>
+            <p class="card-desc">
+              買おうとしている服について、いくつか数字を入れると「どれくらい衝動買いっぽいか」を 0〜100 で表示します。
+            </p>
+          </div>
+        </div>
+
+        <form id="impulseForm">
+          <div class="field">
+            <label>
+              所持している服の総数
+              <span class="hint">例: 50</span>
+            </label>
+            <input type="number" id="totalItems" min="1" value="50" />
+          </div>
+          <div class="field">
+            <label>
+              似ている服の枚数
+              <span class="hint">色・カテゴリ・用途が近いもの</span>
+            </label>
+            <input type="number" id="similarItems" min="0" value="2" />
+          </div>
+
+          <div class="field">
+            <label>
+              このカテゴリの購入後枚数
+              <span class="hint">例: アウターが合計何枚になるか</span>
+            </label>
+            <input type="number" id="catAfter" min="1" value="5" />
+          </div>
+          <div class="field">
+            <label>
+              1カテゴリあたりの平均枚数
+              <span class="hint">ざっくりでOK</span>
+            </label>
+            <input type="number" id="catAvg" min="1" value="3" />
+          </div>
+
+          <div class="field">
+            <label>
+              新しく増えるコーデ数
+              <span class="hint">この服で新しく組めそうなコーデ数</span>
+            </label>
+            <input type="number" id="newCoordCount" min="0" value="1" />
+          </div>
+          <div class="field">
+            <label>
+              既存の色バランスとの相性
+              <span class="hint">体感でOK</span>
+            </label>
+            <select id="colorImbalanceSelect">
+              <option value="20">かなりなじむ（ズレ小）</option>
+              <option value="40">まあなじむ</option>
+              <option value="60">やや浮く</option>
+              <option value="80">かなり浮く（ズレ大）</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <button type="submit">
+              この服の衝動買いスコアを計算
+              <span>↻</span>
+            </button>
+          </div>
+          <div class="field">
+            <button type="button" class="btn-secondary" id="impulseResetBtn">
+              入力をリセット
+            </button>
+          </div>
+        </form>
+
+        <div class="result" id="impulseResult" style="margin-top:1.1rem;">
+          <div class="score-circle">
+            <div class="score-circle-inner">
+              <span class="value" id="impulseScoreValue">72</span>
+              <div class="score-label">/ 100</div>
+            </div>
+          </div>
+          <div class="result-main">
+            <div id="impulseBadge" class="badge badge-warn">
+              要検討：少し衝動買い寄り
+            </div>
+            <div class="result-text-main" id="impulseMainText">
+              「似ている服がすでに多い」「新しく増えるコーデが少ない」ため、やや衝動買い傾向があります。
+            </div>
+            <div class="result-text-sub" id="impulseSubText">
+              買わない代わりに既存アイテムでコーデの幅を広げられないか、一度 ReCloset で試してみましょう。
+            </div>
+          </div>
+        </div>
+
+        <p class="helper-text">
+          ※スコアはプロトタイプ用の簡易ロジックです。本番では色相・カテゴリ・利用履歴などを自動集計して算出します。
+        </p>
+      </section>
+
+      <!-- 右：コーデスコア & レベル -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">
+              コーデスコア診断
+              <span class="card-pill">コーデの質を数値化</span>
+            </div>
+            <p class="card-desc">
+              色・シルエット・シーンなどから、コーデの「完成度」を 0〜100 で算出します。
+            </p>
+          </div>
+        </div>
+
+        <form id="coordForm">
+          <div class="field">
+            <label>色のまとまり</label>
+            <select id="colorHarmony">
+              <option value="85">かなり良い（統一感・またはきれいな差し色）</option>
+              <option value="70">まあ良い（大きな違和感なし）</option>
+              <option value="50">普通（少しちぐはぐ）</option>
+              <option value="35">微妙（色がバラバラな印象）</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>明度・トーンのバランス</label>
+            <select id="toneBalance">
+              <option value="80">良い（トップスとボトムスのコントラスト◎）</option>
+              <option value="65">まあ良い</option>
+              <option value="50">普通</option>
+              <option value="35">重すぎる／軽すぎる</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>シルエット（A/Y/Iライン）</label>
+            <select id="silhouetteFit">
+              <option value="85">きれいなシルエットが出ている</option>
+              <option value="70">ある程度意識されている</option>
+              <option value="50">特に意識していない</option>
+              <option value="35">バランスが悪い気がする</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>シーンとの相性</label>
+            <select id="sceneFit">
+              <option value="90">かなり合っている（ドレスコード◎）</option>
+              <option value="70">まあ合っている</option>
+              <option value="50">ギリギリ許容範囲</option>
+              <option value="35">あまり合っていない</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>
+              アイテムの着回し力
+              <span class="hint">他のコーデでも使い回せそう度（0〜10）</span>
+            </label>
+            <input type="number" id="versatility" min="0" max="10" value="7" />
+          </div>
+          <div class="field">
+            <button type="submit">
+              このコーデのスコアを計算
+              <span>★</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="result" id="coordResult" style="margin-top:1.1rem;">
+          <div class="score-circle" style="background:conic-gradient(#2ecc71 0deg,#d4f8e5 220deg);">
+            <div class="score-circle-inner">
+              <span class="value" id="coordScoreValue">81</span>
+              <div class="score-label">/ 100</div>
+            </div>
+          </div>
+          <div class="result-main">
+            <div id="coordBadge" class="badge badge-good">
+              良い：かなりバランスの良いコーデ
+            </div>
+            <div class="result-text-main" id="coordMainText">
+              色・シルエット・シーンがバランスよくまとまっています。小物を足せばより完成度が上がりそうです。
+            </div>
+            <div class="result-text-sub" id="coordSubText">
+              このコーデをベースに、類似アイテムでもう 1〜2 パターン作っておくと、クローゼット全体の効率が上がります。
+            </div>
+          </div>
+        </div>
+
+        <div class="mini-section-title" style="margin-top:1.2rem;">ReCloset Lv.</div>
+        <div class="level-card" id="levelCard">
+          <div>
+            <span class="level-chip" id="levelChip">Level 4</span>
+            <span id="levelTitle">クローゼット設計中級者</span>
+          </div>
+          <div style="margin-top:0.25rem;" id="levelText">
+            衝動買いはそこそこ抑えられていて、コーデの質も安定してきています。次は「用途ごとの最適化」に挑戦してみましょう。
+          </div>
+          <div class="level-progress">
+            <div class="level-progress-inner" id="levelProgress"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // ---- 衝動買いスコア計算ロジック ----
+    const impulseForm = document.getElementById("impulseForm");
+    const impulseScoreValue = document.getElementById("impulseScoreValue");
+    const impulseBadge = document.getElementById("impulseBadge");
+    const impulseMainText = document.getElementById("impulseMainText");
+    const impulseSubText = document.getElementById("impulseSubText");
+
+    const totalItemsInput = document.getElementById("totalItems");
+    const similarItemsInput = document.getElementById("similarItems");
+    const catAfterInput = document.getElementById("catAfter");
+    const catAvgInput = document.getElementById("catAvg");
+    const newCoordCountInput = document.getElementById("newCoordCount");
+    const colorImbalanceSelect = document.getElementById("colorImbalanceSelect");
+    const impulseResetBtn = document.getElementById("impulseResetBtn");
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    impulseForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const total = Math.max(parseFloat(totalItemsInput.value) || 1, 1);
+      const similar = clamp(parseFloat(similarItemsInput.value) || 0, 0, total);
+      const catAfter = Math.max(parseFloat(catAfterInput.value) || 1, 1);
+      const catAvg = Math.max(parseFloat(catAvgInput.value) || 1, 1);
+      const newCoordCount = Math.max(parseFloat(newCoordCountInput.value) || 0, 0);
+      const colorImbalance = parseFloat(colorImbalanceSelect.value) || 40;
+
+      // Duplication: 似た服が多いほど高く
+      const duplication = clamp((similar / total) * 100, 0, 100);
+
+      // Needlessness: カテゴリが平均より多くなるほど高く
+      let needlessness = ((catAfter - catAvg) / catAvg) * 100;
+      if (needlessness < 0) needlessness = 0;
+      needlessness = clamp(needlessness, 0, 100);
+
+      // Versatility Loss: 新しく増えるコーデ数が少ないほど高く（10以上ならほぼ0）
+      let versatilityLoss = 100 - newCoordCount * 10;
+      versatilityLoss = clamp(versatilityLoss, 0, 100);
+
+      // Impulse Score 合算
+      let impulseScore =
+        0.35 * duplication +
+        0.25 * needlessness +
+        0.25 * versatilityLoss +
+        0.15 * colorImbalance;
+
+      impulseScore = Math.round(impulseScore);
+      impulseScore = clamp(impulseScore, 0, 100);
+
+      impulseScoreValue.textContent = impulseScore.toString();
+
+      // コメント生成
+      let lvlTextMain = "";
+      let lvlTextSub = "";
+      if (impulseScore >= 80) {
+        impulseBadge.textContent = "危険：かなり衝動買い寄り";
+        impulseBadge.className = "badge badge-danger";
+        lvlTextMain =
+          "「似ている服がすでに多い」または「着回しがほとんど増えない」ため、かなり衝動買いの可能性が高いです。";
+        lvlTextSub =
+          "一度カートから外して、24時間〜1週間のクールダウン期間を置くことをおすすめします。ReCloset上で代わりに活かせるアイテムがないか確認してみましょう。";
+      } else if (impulseScore >= 60) {
+        impulseBadge.textContent = "要検討：少し衝動買い寄り";
+        impulseBadge.className = "badge badge-warn";
+        lvlTextMain =
+          "カテゴリの偏りや着回しの少なさから、やや衝動買い寄りです。もう一度「本当に今必要か」を考えると安心です。";
+        lvlTextSub =
+          "似たアイテムの使用頻度が低い場合は、先にそちらを着倒したり、手放すことも選択肢に入れてみてください。";
+      } else if (impulseScore >= 40) {
+        impulseBadge.textContent = "まずまず：バランスは悪くない買い物";
+        impulseBadge.className = "badge badge-good";
+        lvlTextMain =
+          "重複やカテゴリの過剰さは比較的抑えられており、ある程度計画的な買い物になっています。";
+        lvlTextSub =
+          "購入する場合は、このアイテムを軸にしたコーデパターンを2〜3個イメージしてから買うと、さらに満足度が上がります。";
+      } else {
+        impulseBadge.textContent = "良い：かなり計画的な買い物";
+        impulseBadge.className = "badge badge-good";
+        lvlTextMain =
+          "重複も少なく、着回しも期待できるため、かなり計画的で「意味のある投資」に近い買い物といえます。";
+        lvlTextSub =
+          "長く使えそうな素材・シルエットかどうかも合わせてチェックすると、クローゼット全体の質がさらに高まります。";
+      }
+
+      impulseMainText.textContent = lvlTextMain;
+      impulseSubText.textContent = lvlTextSub;
+
+      updateLevelCard();
+    });
+
+    impulseResetBtn.addEventListener("click", () => {
+      totalItemsInput.value = 50;
+      similarItemsInput.value = 2;
+      catAfterInput.value = 5;
+      catAvgInput.value = 3;
+      newCoordCountInput.value = 1;
+      colorImbalanceSelect.value = "40";
+    });
+
+    // ---- コーデスコア計算ロジック ----
+    const coordForm = document.getElementById("coordForm");
+    const coordScoreValue = document.getElementById("coordScoreValue");
+    const coordBadge = document.getElementById("coordBadge");
+    const coordMainText = document.getElementById("coordMainText");
+    const coordSubText = document.getElementById("coordSubText");
+
+    const colorHarmonySelect = document.getElementById("colorHarmony");
+    const toneBalanceSelect = document.getElementById("toneBalance");
+    const silhouetteFitSelect = document.getElementById("silhouetteFit");
+    const sceneFitSelect = document.getElementById("sceneFit");
+    const versatilityInput = document.getElementById("versatility");
+
+    coordForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const colorHarmony = parseFloat(colorHarmonySelect.value) || 60;
+      const toneBalance = parseFloat(toneBalanceSelect.value) || 60;
+      const silhouetteFit = parseFloat(silhouetteFitSelect.value) || 60;
+      const sceneFit = parseFloat(sceneFitSelect.value) || 60;
+      const versatilityRaw = clamp(parseFloat(versatilityInput.value) || 0, 0, 10);
+      const versatility = versatilityRaw * 10; // 0〜10 → 0〜100 に変換
+
+      let coordScore =
+        0.30 * colorHarmony +
+        0.20 * toneBalance +
+        0.20 * silhouetteFit +
+        0.15 * sceneFit +
+        0.15 * versatility;
+
+      coordScore = Math.round(coordScore);
+      coordScore = clamp(coordScore, 0, 100);
+
+      coordScoreValue.textContent = coordScore.toString();
+
+      let badgeText = "";
+      let mainText = "";
+      let subText = "";
+
+      if (coordScore >= 85) {
+        badgeText = "最高：かなり完成度の高いコーデ";
+        coordBadge.className = "badge badge-good";
+        mainText =
+          "色・シルエット・シーン全てのバランスが高水準で整っており、自信を持って出かけられるコーデです。";
+        subText =
+          "写真に残して「自分の定番コーデ」として ReCloset に保存しておくと、忙しい日の時短にもつながります。";
+      } else if (coordScore >= 70) {
+        badgeText = "良い：かなりバランスの良いコーデ";
+        coordBadge.className = "badge badge-good";
+        mainText =
+          "全体としてまとまりがあり、十分に「おしゃれ」といえるレベルです。少しだけ小物で遊ぶ余地もあります。";
+        subText =
+          "色数を1色減らす／差し色を1箇所に絞るなど、小さな調整でさらに完成度を高められます。";
+      } else if (coordScore >= 50) {
+        badgeText = "普通：悪くはないが伸びしろあり";
+        coordBadge.className = "badge badge-warn";
+        mainText =
+          "大きな失敗はないものの、色やシルエットのどこかが少しちぐはぐな印象かもしれません。";
+        subText =
+          "一番スコアの低い項目（色・トーン・シルエット・シーン）のどれかを 1 つだけ改善してみると、一気に印象が変わります。";
+      } else {
+        badgeText = "要調整：もう一歩練りたいコーデ";
+        coordBadge.className = "badge badge-danger";
+        mainText =
+          "シルエットやシーン適合など、少し手を入れた方が安心なポイントがありそうです。";
+        subText =
+          "トップスかボトムスのどちらかを「無地・ベーシックな色」に差し替えるところから、まずは試してみてください。";
+      }
+
+      coordBadge.textContent = badgeText;
+      coordMainText.textContent = mainText;
+      coordSubText.textContent = subText;
+
+      updateLevelCard();
+    });
+
+    // ---- レベルカード更新ロジック ----
+    const levelChip = document.getElementById("levelChip");
+    const levelTitle = document.getElementById("levelTitle");
+    const levelText = document.getElementById("levelText");
+    const levelProgress = document.getElementById("levelProgress");
+
+    function getCurrentScores() {
+      const impulse = parseFloat(impulseScoreValue.textContent) || 70;
+      const coord = parseFloat(coordScoreValue.textContent) || 75;
+      return { impulse, coord };
+    }
+
+    function updateLevelCard() {
+      const { impulse, coord } = getCurrentScores();
+      // 衝動買いが低いほど良いので、100 - impulse で「計画性スコア」を作る
+      const planningScore = 100 - impulse;
+      const combined = (planningScore + coord) / 2; // 0〜100
+
+      // レベルは 1〜5 にざっくり分類
+      let level = 1;
+      if (combined >= 80) level = 5;
+      else if (combined >= 65) level = 4;
+      else if (combined >= 50) level = 3;
+      else if (combined >= 35) level = 2;
+      else level = 1;
+
+      levelChip.textContent = `Level ${level}`;
+
+      let title = "";
+      let text = "";
+
+      switch (level) {
+        case 5:
+          title = "クローゼット設計マスター";
+          text =
+            "衝動買いもほとんどなく、コーデの質も非常に高い状態です。新しく買う服は「長期的に価値がある投資」かどうかだけを意識すると、ミニマルで強いワードローブになります。";
+          break;
+        case 4:
+          title = "クローゼット設計中級者";
+          text =
+            "衝動買いはそこそこ抑えられていて、コーデの質も安定してきています。次は「用途ごとの最適化」に挑戦し、シーンごとに1〜2の鉄板コーデを用意していきましょう。";
+          break;
+        case 3:
+          title = "意識し始めたクローゼット設計者";
+          text =
+            "買い物とコーデの両方に気を配り始めている段階です。まずは同じような服を増やしすぎないことと、1枚ごとに「何パターン着回せるか」を意識するとレベルアップが早くなります。";
+          break;
+        case 2:
+          title = "感覚派クローゼットユーザー";
+          text =
+            "そのときの気分で買うことが多く、コーデも日によってムラが出やすい状態かもしれません。ReCloset のスコアを「セカンドオピニオン」として、買う前に一度だけ確認する習慣をつけてみましょう。";
+          break;
+        default:
+          title = "ノープラン・クローゼット状態";
+          text =
+            "気づいたら似たような服だらけになっている可能性があります。まずは「今月はトップスを買わない」など、簡単なルールを 1 つ決めることから始めてみましょう。";
+      }
+
+      levelTitle.textContent = title;
+      levelText.textContent = text;
+      levelProgress.style.width = `${combined}%`;
+    }
+
+    // 初期レベル表示
+    updateLevelCard();
+  </script>
+</body>
+</html>

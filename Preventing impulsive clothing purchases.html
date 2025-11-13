@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ja">
+<!-- 2回目以降の買いたい服も評価できるよう対応 -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReCloset – 衝動買い防止 × コーデ判断アプリ</title>
+  <style>
+    :root{
+      --bg:#f7f7fb; --card:#fff; --ink:#222; --muted:#666; --acc:#5b8def; --acc2:#00b894;
+      --danger:#e74c3c; --warn:#f39c12; --border:#e5e7eb; --chip:#eef2ff;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP",sans-serif}
+    header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--border);z-index:10}
+    .container{max-width:1100px;margin:0 auto;padding:1rem}
+    .brand{display:flex;align-items:center;gap:.75rem}
+    .brand h1{font-size:1.25rem;margin:.2rem 0}
+    .tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem}
+    .tab{appearance:none;border:1px solid var(--border);background:var(--card);padding:.5rem .9rem;border-radius:.7rem;cursor:pointer}
+    .tab.active{background:var(--acc);color:#fff;border-color:var(--acc)}
+    main{padding:1rem}
+    .grid{display:grid;gap:1rem}
+    @media(min-width:960px){.grid{grid-template-columns:1.2fr .8fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.04)}
+    .card h2{font-size:1.05rem;margin:0 0 .75rem}
+    .card .head{padding:1rem 1rem .5rem;border-bottom:1px solid var(--border)}
+    .card .body{padding:1rem}
+    label{font-size:.9rem;color:var(--muted)}
+    input,select,textarea{width:100%;padding:.6rem .7rem;border:1px solid var(--border);border-radius:10px;background:#fff}
+    textarea{min-height:72px}
+    .row{display:grid;gap:.8rem}
+    @media(min-width:680px){.row.cols-2{grid-template-columns:1fr 1fr}}
+    @media(min-width:880px){.row.cols-3{grid-template-columns:1fr 1fr 1fr}}
+    .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem .9rem;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
+    .btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+    .btn.success{background:var(--acc2);border-color:var(--acc2);color:#fff}
+    .btn.ghost{background:transparent}
+    .btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+    .btn.warning{background:var(--warn);border-color:var(--warn);color:#fff}
+    .toolbar{display:flex;gap:.5rem;flex-wrap:wrap}
+    .list{display:grid;gap:.6rem}
+    .item{display:flex;align-items:start;justify-content:space-between;gap:.75rem;padding:.6rem .75rem;border:1px solid var(--border);border-radius:10px;background:#fff}
+    .muted{color:var(--muted)}
+    .chip{display:inline-block;padding:.25rem .5rem;border-radius:999px;background:var(--chip);border:1px solid #dbeafe;color:#374151;font-size:.75rem}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .section-title{display:flex;align-items:center;justify-content:space-between;margin:.2rem 0 .8rem}
+    .hint{font-size:.85rem;color:var(--muted)}
+    .kbd{font:600 .8rem ui-monospace,monospace;padding:.1rem .35rem;border:1px solid var(--border);border-radius:6px;background:#fff}
+    .score{font-weight:700}
+    progress{width:100%;height:12px}
+    .ok{color:var(--acc2)} .warn{color:var(--warn)} .ng{color:var(--danger)}
+    .hr{height:1px;background:var(--border);margin:1rem 0}
+    details{border:1px dashed var(--border);border-radius:10px;padding:.6rem .8rem;background:#fcfcff}
+    summary{cursor:pointer;color:#374151}
+    .empty{padding:1rem;border:1px dashed var(--border);border-radius:10px;color:var(--muted);text-align:center}
+    footer{padding:1rem 0;color:var(--muted);font-size:.85rem}
+    .right{justify-content:flex-end}
+
+    /* --------------- 買いたい服リスト専用 -------------- */
+    .wanted-list-table { width:100%; border-collapse:collapse; margin-top:1rem;}
+    .wanted-list-table th, .wanted-list-table td { border:1px solid var(--border); padding:.6rem .5rem; text-align:left;}
+    .wanted-list-table th { background: #f3f4fa;}
+    .wanted-list-table td:last-child { white-space:nowrap;}
+    .wanted-status { padding:.1em .9em; border-radius:1em; font-size:.95em;}
+    .wanted-status.未評価 { background:#f6e6ff;}
+    .wanted-status.済  { background:#e6ffe6;}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="brand">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 2h10a2 2 0 0 1 2 2v16l-7-3-7 3V4a2 2 0 0 1 2-2z" fill="#5b8def"/></svg>
+        <div>
+          <h1>ReCloset – 衝動買い防止 × コーデ判断</h1>
+          <div class="hint">ブラウザだけで動作。データは端末の <span class="kbd">localStorage</span> に保存されます。</div>
+        </div>
+      </div>
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="wardrobe">ワードローブ</button>
+        <button class="tab" data-tab="outfits">コーデ作成</button>
+        <button class="tab" data-tab="evaluate">購入検討</button>
+        <button class="tab" data-tab="wanted">買いたい服リスト</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- ワードローブ -->
+    <section id="tab-wardrobe">
+      <div class="grid">
+        <div class="card">
+          <div class="head"><h2>アイテム登録</h2></div>
+          <div class="body">
+            <div class="row cols-2">
+              <div>
+                <label>名称</label>
+                <input id="itemName" placeholder="例: 白Tシャツ（無地）" />
+              </div>
+              <div>
+                <label>カテゴリ</label>
+                <select id="itemCat">
+                  <option>インナー</option>
+                  <option>アウター</option>
+                  <option>パンツ</option>
+                  <option>靴</option>
+                  <option>帽子</option>
+                  <option>その他</option>
+                </select>
+              </div>
+            </div>
+            <div class="row" style="margin-top:.6rem">
+              <div>
+                <label>メモ・特徴（ブランド/素材/色など）</label>
+                <textarea id="itemNote" placeholder="例: ユニクロ コットン 白 クルーネック"></textarea>
+              </div>
+            </div>
+            <div class="toolbar right" style="margin-top:.8rem">
+              <button class="btn" id="btnClearAll">全削除（データ初期化）</button>
+              <button class="btn primary" id="btnAddItem">追加</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="head"><h2>登録済みアイテム</h2></div>
+          <div class="body">
+            <div class="row cols-2" style="margin-bottom:.6rem">
+              <input id="searchBox" placeholder="名称やメモで検索" />
+              <select id="filterCat">
+                <option value="">カテゴリで絞り込み</option>
+                <option>インナー</option>
+                <option>アウター</option>
+                <option>パンツ</option>
+                <option>靴</option>
+                <option>帽子</option>
+                <option>その他</option>
+              </select>
+            </div>
+            <div id="itemsList" class="list"></div>
+            <div id="itemsEmpty" class="empty" style="display:none">まだアイテムがありません。上のフォームから追加してください。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- コーデ作成 -->
+    <section id="tab-outfits" hidden>
+      <div class="grid">
+        <div class="card">
+          <div class="head"><h2>コーデ組み合わせ</h2></div>
+          <div class="body">
+            <div class="row cols-2">
+              <div>
+                <label>インナー</label>
+                <select id="selInner"></select>
+              </div>
+              <div>
+                <label>アウター</label>
+                <select id="selOuter"></select>
+              </div>
+              <div>
+                <label>パンツ</label>
+                <select id="selPants"></select>
+              </div>
+              <div>
+                <label>靴</label>
+                <select id="selShoes"></select>
+              </div>
+              <div>
+                <label>帽子</label>
+                <select id="selHat"></select>
+              </div>
+            </div>
+            <div class="hr"></div>
+            <div class="row cols-2">
+              <input id="outfitName" placeholder="コーデ名（例: 通学・デート用）" />
+              <button class="btn success" id="btnSaveOutfit">コーデを保存</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="head"><h2>保存済みコーデ</h2></div>
+          <div class="body">
+            <div id="outfitList" class="list"></div>
+            <div id="outfitEmpty" class="empty" style="display:none">まだコーデはありません。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 購入検討 -->
+    <section id="tab-evaluate" hidden>
+      <div class="grid">
+        <div class="card">
+          <div class="head"><h2>買いたい服の評価</h2></div>
+          <div class="body">
+            <div class="row cols-2">
+              <input id="candName" placeholder="例: 黒オックスフォードシャツ" />
+              <select id="candCat">
+                <option>インナー</option>
+                <option>アウター</option>
+                <option>パンツ</option>
+                <option>靴</option>
+                <option>帽子</option>
+                <option>その他</option>
+              </select>
+            </div>
+            <div class="row" style="margin-top:.6rem">
+              <textarea id="candNote" placeholder="素材/色/形/用途など（例: シャツ 青 長袖 無地 ビジネス）"></textarea>
+            </div>
+            <div class="toolbar right" style="margin-top:.8rem">
+              <button class="btn primary" id="btnEvaluate">評価する＋リストに追加</button>
+            </div>
+
+            <div id="evalResult" style="margin-top:1rem;display:none">
+              <div class="section-title">
+                <div>
+                  <strong>衝動買いスコア:</strong>
+                  <span id="scoreText" class="score"></span>
+                </div>
+              </div>
+              <progress id="scoreBar" max="100" value="0"></progress>
+              <div class="hint" id="scoreHint" style="margin-top:.4rem"></div>
+
+              <div class="hr"></div>
+
+              <div class="row cols-2">
+                <div>
+                  <h3 style="margin:.2rem 0 .5rem">類似・重複チェック</h3>
+                  <div id="dupList" class="list"></div>
+                  <div id="dupEmpty" class="empty" style="display:none">似ているアイテムは見つかりませんでした。</div>
+                </div>
+                <div>
+                  <h3 style="margin:.2rem 0 .5rem">系統（NB分類）</h3>
+                  <div id="stylePred" class="chip">未判定</div>
+                  <div class="hint" style="margin-top:.4rem">説明文から推定（例: カジュアル/フォーマル/スポーティ/ストリート/ミニマル など）</div>
+                </div>
+              </div>
+
+              <div class="hr"></div>
+
+              <details>
+                <summary>学習データ（系統）を編集する</summary>
+                <div class="row cols-2" style="margin-top:.6rem">
+                  <input id="trainCat" placeholder="カテゴリ（例: カジュアル）" />
+                  <input id="trainText" placeholder="教師データ（例: デニム スニーカー Tシャツ）」 />
+                </div>
+                <div class="toolbar right" style="margin-top:.6rem">
+                  <button class="btn" id="btnTrain">学習を追加</button>
+                  <button class="btn warning" id="btnResetNB">学習初期化（既定に戻す）</button>
+                </div>
+                <div class="hint" style="margin-top:.6rem">教師データは端末に保存され、以降の判定に反映されます。</div>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="head"><h2>データのバックアップ</h2></div>
+          <div class="body">
+            <div class="toolbar" style="margin-bottom:.6rem">
+              <button class="btn" id="btnExport">JSONエクスポート</button>
+              <input type="file" id="fileImport" accept="application/json" style="display:none" />
+              <button class="btn" id="btnImport">インポート</button>
+            </div>
+            <textarea id="exportArea" class="mono" placeholder="ここにエクスポートされたJSONが表示されます" readonly></textarea>
+            <div class="hint" style="margin-top:.4rem">提出時は<strong>HTMLファイル</strong>に加えて、このJSONを添付すると再現可能性が高まります。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 買いたい服リスト: 2回目以降の検討・評価など一元管理 -->
+    <section id="tab-wanted" hidden>
+      <div class="grid">
+        <div class="card" style="grid-column:1/-1">
+          <div class="head">
+            <h2>買いたい服リスト</h2>
+          </div>
+          <div class="body">
+            <div class="hint" style="margin-bottom:.5rem">
+              評価済み/未評価問わず、今後も欲しい服を記録できます。過去追加した服の評価・再判定も可能です。
+            </div>
+            <div style="margin-bottom:.7rem;">
+              <button class="btn primary" id="btnAddWantedForm">＋リストに追加</button>
+            </div>
+            <div id="wantedListWrap"></div>
+            <div id="wantedListEmpty" class="empty" style="display:none;">
+              まだリストに服がありません。<br>「買いたい服の評価」で追加、または「＋リストに追加」から記入してください。
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="container">© 2025 ReCloset. Data stored locally.</footer>
+  </main>
+
+  <script>
+    // ===============================
+    // Utilities
+    // ===============================
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+    const storage = {
+      load(key, fallback){
+        try{ return JSON.parse(localStorage.getItem(key)) ?? fallback }catch{ return fallback }
+      },
+      save(key, val){ localStorage.setItem(key, JSON.stringify(val)) }
+    }
+
+    const TOK = (text) => (text||"")
+      .toLowerCase()
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter(Boolean);
+
+    const now = () => new Date().toISOString();
+
+    // ===============================
+    // Data Model
+    // ===============================
+    const DB_KEYS = {
+      items: 'rc_items_v1',
+      outfits: 'rc_outfits_v1',
+      nb: 'rc_nb_v1',
+      wanted: 'rc_wanted_v1'
+    };
+
+    let items = storage.load(DB_KEYS.items, []); // {id, name, cat, note, createdAt}
+    let outfits = storage.load(DB_KEYS.outfits, []); // {id, name, picks: ...}
+    let wantedList = storage.load(DB_KEYS.wanted, []); // {id, name, cat, note, createdAt, updatedAt, status, score, style, lastEvalAt}
+
+    // ===============================
+    // Naive Bayes Classifier (browser-only)
+    // ===============================
+    const NB = {
+      data: storage.load(DB_KEYS.nb, {docs:{},counts:{},totalDocs:0}),
+      tokenize: TOK,
+      train(category, text){
+        category = (category||'').trim();
+        text = (text||'').trim();
+        if(!category || !text) return false;
+        const words = NB.tokenize(text);
+        if(!NB.data.docs[category]){ NB.data.docs[category] = {}; NB.data.counts[category]=0; }
+        for(const w of words){ NB.data.docs[category][w] = (NB.data.docs[category][w]||0)+1 }
+        NB.data.counts[category]++; NB.data.totalDocs++;
+        storage.save(DB_KEYS.nb, NB.data);
+        return true;
+      },
+      classify(text){
+        text = (text||'').trim();
+        if(!text) return null;
+        const data = NB.data;
+        if(Object.keys(data.docs).length===0 || data.totalDocs===0){
+          return {label:null, score: -Infinity};
+        }
+        const words = NB.tokenize(text);
+        const vocab = new Set();
+        for(const cat of Object.keys(data.docs)){
+          Object.keys(data.docs[cat]).forEach(w=>vocab.add(w));
+        }
+        const V = vocab.size || 1;
+        let best = {label:null, score:-Infinity};
+        for(const cat of Object.keys(data.docs)){
+          if(data.counts[cat]===0) continue;
+          let score = Math.log(data.counts[cat]/data.totalDocs);
+          const totalWords = Object.values(data.docs[cat]).reduce((a,b)=>a+b,0);
+          for(const w of words){
+            const c = data.docs[cat][w]||0;
+            score += Math.log((c+1)/(totalWords+V));
+          }
+          if(score > best.score){ best = {label:cat, score}; }
+        }
+        return best;
+      },
+      resetToDefaults(){
+        NB.data = {docs:{},counts:{},totalDocs:0};
+        const seeds = [
+          ['カジュアル','デニム Tシャツ スニーカー パーカー チノ レギュラー スウェット'],
+          ['フォーマル','ジャケット シャツ ネクタイ 皮靴 スラックス センタープレス'],
+          ['スポーティ','ジャージ ランニング ドライ 吸汗 速乾 スポーツ スニーカー トレーニング'],
+          ['ストリート','ビッグシルエット ロゴ フーディ ワイド デニム スケータースニーカー'],
+          ['ミニマル','無地 モノトーン シンプル ベーシック クリーン'],
+        ];
+        for(const [cat, text] of seeds){ NB.train(cat, text) }
+      }
+    }
+    if((NB.data.totalDocs||0)===0){ NB.resetToDefaults() }
+
+    // ===============================
+    // Rendering Helpers
+    // ===============================
+    function renderItems(){
+      const q = $('#searchBox').value.trim().toLowerCase();
+      const fc = $('#filterCat').value;
+      const list = $('#itemsList'); list.innerHTML = '';
+      const filtered = items.filter(it => (
+        (!fc || it.cat===fc) && (!q || (it.name+" "+(it.note||'')).toLowerCase().includes(q))
+      ));
+      $('#itemsEmpty').style.display = filtered.length? 'none':'block';
+      for(const it of filtered){
+        const el = document.createElement('div'); el.className='item';
+        const left = document.createElement('div');
+        left.innerHTML = `<div><strong>${escapeHtml(it.name)}</strong> <span class="chip">${it.cat}</span></div>
+          <div class="muted">${escapeHtml(it.note||'')}</div>
+          <div class="hint">登録: <span class="mono">${it.createdAt.slice(0,10)}</span></div>`;
+        const right = document.createElement('div'); right.className='toolbar';
+        const bEdit = btn('編集', ()=>editItem(it.id));
+        const bDel = btn('削除', ()=>delItem(it.id), 'danger');
+        right.append(bEdit,bDel);
+        el.append(left,right); list.append(el);
+      }
+      refreshOutfitSelectors();
+    }
+
+    function btn(text, onClick, variant){
+      const b = document.createElement('button'); b.className = 'btn'+(variant?(' '+variant):''); b.textContent = text; b.onclick = onClick; return b;
+    }
+    function escapeHtml(s){
+      return (s||'').replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))
+    }
+
+    // Outfit rendering
+    function refreshOutfitSelectors(){
+      const cats = ['インナー','アウター','パンツ','靴','帽子'];
+      const map = Object.fromEntries(cats.map(c=>[c, items.filter(x=>x.cat===c)]));
+      const pairs = [ ['selInner','インナー'], ['selOuter','アウター'], ['selPants','パンツ'], ['selShoes','靴'], ['selHat','帽子'] ];
+      for(const [id, cat] of pairs){
+        const sel = $('#'+id); sel.innerHTML = '<option value="">選択しない</option>';
+        for(const it of map[cat]){
+          const opt = document.createElement('option'); opt.value = it.id; opt.textContent = it.name; sel.append(opt);
+        }
+      }
+      renderOutfits();
+    }
+
+    function renderOutfits(){
+      const wrap = $('#outfitList'); wrap.innerHTML='';
+      $('#outfitEmpty').style.display = outfits.length? 'none':'block';
+      for(const ofit of outfits){
+        const el = document.createElement('div'); el.className='item';
+        const picks = ofit.picks;
+        const pickText = ['インナー','アウター','パンツ','靴','帽子'].map(k=>{
+          const it = items.find(x=>x.id===picks[k]);
+          return `<div><span class="chip">${k}</span> ${escapeHtml(it?it.name:'—')}</div>`
+        }).join('');
+        el.innerHTML = `<div><strong>${escapeHtml(ofit.name)}</strong><div class="muted">${pickText}</div></div>`;
+        const right = document.createElement('div'); right.className='toolbar';
+        right.append(btn('削除', ()=>delOutfit(ofit.id), 'danger'));
+        el.append(right); wrap.append(el);
+      }
+    }
+
+    // ===============================
+    // Wardrobe Actions
+    // ===============================
+    $('#btnAddItem').onclick = () => {
+      const name = $('#itemName').value.trim();
+      const cat = $('#itemCat').value; const note = $('#itemNote').value.trim();
+      if(!name){ alert('名称を入力してください'); return }
+      const id = cryptoRandomId();
+      items.push({id,name,cat,note,createdAt:now()});
+      storage.save(DB_KEYS.items, items);
+      $('#itemName').value=''; $('#itemNote').value='';
+      renderItems();
+    }
+
+    function editItem(id){
+      const it = items.find(x=>x.id===id); if(!it) return;
+      const name = prompt('名称を編集', it.name); if(name===null) return;
+      const note = prompt('メモ・特徴を編集', it.note||''); if(note===null) return;
+      it.name = name.trim(); it.note = note.trim();
+      storage.save(DB_KEYS.items, items); renderItems();
+    }
+    function delItem(id){
+      if(!confirm('削除しますか？')) return;
+      items = items.filter(x=>x.id!==id);
+      storage.save(DB_KEYS.items, items);
+      renderItems();
+    }
+
+    $('#btnClearAll').onclick = () => {
+      if(!confirm('全データ（アイテム/コーデ/学習/買いたいリスト）を初期化しますか？')) return;
+      items=[]; outfits=[]; NB.resetToDefaults(); wantedList=[];
+      storage.save(DB_KEYS.items, items); 
+      storage.save(DB_KEYS.outfits, outfits);
+      storage.save(DB_KEYS.wanted, wantedList);
+      renderItems(); renderOutfits(); renderWantedList(); $('#exportArea').value='';
+      alert('初期化しました');
+    }
+
+    $('#searchBox').oninput = renderItems;
+    $('#filterCat').onchange = renderItems;
+
+    // ===============================
+    // Outfit Actions
+    // ===============================
+    $('#btnSaveOutfit').onclick = () => {
+      const name = ($('#outfitName').value||'').trim(); if(!name){ alert('コーデ名を入力してください'); return }
+      const picks = {
+        'インナー': $('#selInner').value || null,
+        'アウター': $('#selOuter').value || null,
+        'パンツ': $('#selPants').value || null,
+        '靴': $('#selShoes').value || null,
+        '帽子': $('#selHat').value || null,
+      };
+      const id = cryptoRandomId(); outfits.push({id,name,picks});
+      storage.save(DB_KEYS.outfits, outfits); $('#outfitName').value=''; renderOutfits();
+    }
+    function delOutfit(id){ if(!confirm('コーデを削除しますか？')) return; outfits = outfits.filter(x=>x.id!==id); storage.save(DB_KEYS.outfits, outfits); renderOutfits(); }
+
+
+    // ===============================
+    // Evaluate Purchase ＆ Wantedリスト追加
+    // ===============================
+    $('#btnEvaluate').onclick = () => {
+      const name = ($('#candName').value||'').trim();
+      const cat = $('#candCat').value; 
+      const note = ($('#candNote').value||'').trim();
+      if(!name && !note){ alert('名前か説明文を入力してください'); return }
+      const desc = [name, note].filter(Boolean).join(' ');
+      const dup = findDuplicates(desc, cat);
+      const recency = recentPurchaseFactor();
+      const redundancy = categoryRedundancy(cat);
+      const style = NB.classify(note||name||'');
+      const score = impulseScore({dupCount:dup.length, recency, redundancy});
+
+      // Render
+      $('#evalResult').style.display = 'block';
+      $('#scoreBar').value = score;
+      $('#scoreText').textContent = `${score} / 100`;
+      const hint = scoreHint(score);
+      $('#scoreHint').innerHTML = hint.text; $('#scoreHint').className = hint.class;
+
+      const list = $('#dupList'); list.innerHTML='';
+      $('#dupEmpty').style.display = dup.length? 'none':'block';
+      for(const it of dup){
+        const el = document.createElement('div'); el.className='item';
+        el.innerHTML = `<div><strong>${escapeHtml(it.name)}</strong> <span class="chip">${it.cat}</span>
+          <div class="muted">${escapeHtml(it.note||'')}</div></div>`;
+        list.append(el);
+      }
+      $('#stylePred').textContent = style && style.label ? `推定: ${style.label}` : 'データ不足';
+
+      // 「買いたい服リスト」に追加 or 更新
+      let already = wantedList.find(w => w.name === name && w.cat === cat && w.note === note);
+      if (!already) {
+        // 新規追加
+        wantedList.push({
+          id: cryptoRandomId(),
+          name, cat, note,
+          createdAt: now(),
+          updatedAt: now(),
+          status: '未評価', // 初回は未評価、ただし今判定したので→「済（最新）」に
+          score,
+          style: style && style.label ? style.label : '',
+          lastEvalAt: now()
+        });
+      } else {
+        // 更新（再評価）
+        already.score = score;
+        already.style = (style && style.label) ? style.label : '';
+        already.updatedAt = now();
+        already.status = '済';
+        already.lastEvalAt = now();
+      }
+      storage.save(DB_KEYS.wanted, wantedList);
+      renderWantedList();
+    }
+
+    function findDuplicates(desc, cat){
+      const tokens = new Set(TOK(desc));
+      return items.filter(it => {
+        if(cat && it.cat!==cat) return false;
+        const overlap = intersect(tokens, new Set(TOK(it.name+' '+(it.note||''))));
+        return overlap.size>0;
+      });
+    }
+    function intersect(a,b){ const s=new Set(); for(const x of a){ if(b.has(x)) s.add(x) } return s }
+
+    function recentPurchaseFactor(){
+      const nowT = Date.now();
+      const recent = items.filter(it => nowT - new Date(it.createdAt).getTime() < 1000*60*60*24*30);
+      return Math.min(recent.length/5, 1);
+    }
+
+    function categoryRedundancy(cat){
+      const cnt = items.filter(it=>it.cat===cat).length;
+      return Math.min(cnt/8, 1);
+    }
+
+    function impulseScore({dupCount, recency, redundancy}){
+      const dupFactor = Math.min(dupCount/3, 1);
+      const score = Math.round( (dupFactor*0.5 + recency*0.25 + redundancy*0.25) * 100 );
+      return score;
+    }
+
+    function scoreHint(score){
+      if(score >= 70) return {text:'<span class="ng">要再考:</span> 似た服が多い/最近の購入が多め。1週間のクールダウンを推奨。', class:'ng'}
+      if(score >= 40) return {text:'<span class="warn">注意:</span> 少し重複傾向。既存コーデと相性をもう一度確認。', class:'warn'}
+      return {text:'<span class="ok">OK:</span> 衝動買いリスクは低め。必要性を満たすなら検討可。', class:'ok'}
+    }
+
+    // ===============================
+    // NB Training UI
+    // ===============================
+    $('#btnTrain').onclick = () => {
+      const c = $('#trainCat').value.trim(); const t = $('#trainText').value.trim();
+      if(!c || !t){ alert('カテゴリと教師データを入力してください'); return }
+      NB.train(c, t); $('#trainText').value=''; alert('学習を追加しました');
+    }
+    $('#btnResetNB').onclick = () => { if(confirm('学習データを既定に戻しますか？')){ NB.resetToDefaults(); alert('初期化しました'); } }
+
+    // ===============================
+    // 買いたい服リスト
+    // ===============================
+    function renderWantedList() {
+      const wrap = $('#wantedListWrap');
+      wrap.innerHTML = '';
+      if (!wantedList.length) {
+        $('#wantedListEmpty').style.display = 'block';
+        return;
+      }
+      $('#wantedListEmpty').style.display = 'none';
+
+      // Sort by updatedAt desc
+      const sorted = [...wantedList].sort((a,b)=> (b.updatedAt||b.createdAt).localeCompare(a.updatedAt||a.createdAt));
+      const table = document.createElement('table'); table.className = 'wanted-list-table';
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>名称</th>
+            <th>カテゴリ</th>
+            <th>特徴/メモ</th>
+            <th>最近の評価</th>
+            <th>スコア</th>
+            <th>系統</th>
+            <th>状態</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map(w => `
+            <tr>
+              <td>${escapeHtml(w.name)}</td>
+              <td>${escapeHtml(w.cat)}</td>
+              <td>${escapeHtml(w.note||'')}</td>
+              <td>${w.lastEvalAt ? `<span class="mono">${w.lastEvalAt.slice(0,10)}</span>` : '-'}</td>
+              <td>${typeof w.score==='number' ? (w.score + ' / 100') : '-'}</td>
+              <td>${escapeHtml(w.style||'')}</td>
+              <td><span class="wanted-status ${w.status||'未評価'}">${w.status||'未評価'}</span></td>
+              <td>
+                <button class="btn" onclick="window._editWanted('${w.id}')">再評価</button>
+                <button class="btn danger" onclick="window._delWanted('${w.id}')">削除</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      `;
+      wrap.append(table);
+    }
+
+    // 再評価
+    window._editWanted = function(id) {
+      const w = wantedList.find(x=>x.id===id); if(!w) return;
+      // 再評価フォーム（同じ評価UI活用）
+      $('#tab-evaluate').hidden = false;
+      $$('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab==='evaluate'));
+      ['wardrobe','outfits','wanted'].forEach(t=>$('#tab-'+t).hidden = true);
+      $('#candName').value = w.name; $('#candCat').value = w.cat; $('#candNote').value=w.note;
+      $('#evalResult').style.display = "none";
+      window.scrollTo({top:$('#tab-evaluate').offsetTop-20, behavior:'smooth'});
+    }
+    // 削除
+    window._delWanted = function(id) {
+      if(!confirm('リストから削除しますか？')) return;
+      wantedList = wantedList.filter(x=>x.id!==id);
+      storage.save(DB_KEYS.wanted, wantedList);
+      renderWantedList();
+    }
+
+    // 個別追加フォーム
+    $('#btnAddWantedForm').onclick = () => {
+      const name = prompt('名称（例: 黒シャツ）');
+      if(!name) return;
+      const cat = prompt('カテゴリ（例: インナー, アウター ...）') || '';
+      const note = prompt('特徴・メモ')||'';
+      wantedList.push({
+        id: cryptoRandomId(),
+        name, cat, note,
+        createdAt: now(),
+        updatedAt: now(),
+        status: '未評価', score: null, style: '', lastEvalAt: null
+      });
+      storage.save(DB_KEYS.wanted, wantedList);
+      renderWantedList();
+    };
+
+    // ===============================
+    // Import / Export
+    // ===============================
+    $('#btnExport').onclick = () => {
+      const payload = { items, outfits, nb: NB.data, wanted: wantedList, exportedAt: now() };
+      const text = JSON.stringify(payload, null, 2); $('#exportArea').value = text;
+      const blob = new Blob([text], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'recloset_data.json'; a.click();
+    }
+    $('#btnImport').onclick = () => $('#fileImport').click();
+    $('#fileImport').onchange = (e) => {
+      const file = e.target.files[0]; if(!file) return;
+      const reader = new FileReader(); reader.onload = () => {
+        try{
+          const data = JSON.parse(reader.result);
+          items = data.items||[]; outfits = data.outfits||[]; NB.data = data.nb||NB.data;
+          wantedList = data.wanted||[];
+          storage.save(DB_KEYS.items, items); storage.save(DB_KEYS.outfits, outfits); 
+          storage.save(DB_KEYS.nb, NB.data);
+          storage.save(DB_KEYS.wanted, wantedList);
+          renderItems(); renderOutfits(); renderWantedList(); alert('インポート完了');
+        }catch(err){ alert('インポートに失敗しました: '+err.message) }
+      };
+      reader.readAsText(file);
+    }
+
+    // ===============================
+    // Tabs
+    // ===============================
+    $$('.tab').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+    function switchTab(name){
+      $$('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+      ['wardrobe','outfits','evaluate','wanted'].forEach(t=>{
+        const el = $('#tab-'+t); el.hidden = (t!==name);
+      });
+      if(name==='outfits') refreshOutfitSelectors();
+      if(name==='wanted') renderWantedList();
+    }
+
+    function cryptoRandomId(){
+      if(window.crypto?.getRandomValues){ const a = new Uint32Array(4); crypto.getRandomValues(a); return Array.from(a,x=>x.toString(16).padStart(8,'0')).join('') }
+      return Math.random().toString(16).slice(2)+Date.now().toString(16);
+    }
+
+    // Init
+    renderItems(); refreshOutfitSelectors(); renderWantedList();
+  </script>
+</body>
+</html>
